@@ -56,10 +56,6 @@ Options
 
   Path to config file. See :ref:`config file reference <scenedetect_cli-config_file>` for details.
 
-.. option:: -s CSV, --stats CSV
-
-  Stats file (.csv) to write frame metrics. Existing files will be overwritten. Used for tuning detection parameters and data analysis.
-
 .. option:: -f FPS, --framerate FPS
 
   Override framerate with value as frames/sec.

@@ -251,12 +251,12 @@ def test_cli_detector_with_stats(tmp_path, detector_command: str):
     """Test each detection algorithm with a statsfile."""
     # Run with a statsfile twice to ensure the file is populated with those metrics and reloaded.
     assert invoke_scenedetect(
-        '-i {VIDEO} -s {STATS} time {TIME} {DETECTOR}',
+        '-i {VIDEO} write-stats -f {STATS} time {TIME} {DETECTOR}',
         output_dir=tmp_path,
         DETECTOR=detector_command,
     ) == 0
     assert invoke_scenedetect(
-        '-i {VIDEO} -s {STATS} time {TIME} {DETECTOR}',
+        '-i {VIDEO} write-stats -f {STATS} time {TIME} {DETECTOR}',
         output_dir=tmp_path,
         DETECTOR=detector_command,
     ) == 0
@@ -273,7 +273,7 @@ def test_cli_list_scenes(tmp_path: Path):
     ) == 0
     # Add statsfile
     assert invoke_scenedetect(
-        '-i {VIDEO} -s {STATS} time {TIME} {DETECTOR} list-scenes',
+        '-i {VIDEO} write-stats -f {STATS} time {TIME} {DETECTOR} list-scenes',
         output_dir=tmp_path,
     ) == 0
     # Suppress output file
@@ -290,19 +290,19 @@ def test_cli_split_video_ffmpeg(tmp_path: Path):
     """Test `split-video` command using ffmpeg."""
     # Assumption: The default filename format is VIDEO_NAME-Scene-SCENE_NUMBER.
     assert invoke_scenedetect(
-        '-i {VIDEO} -s {STATS} time {TIME} {DETECTOR} split-video', output_dir=tmp_path) == 0
+        '-i {VIDEO} write-stats -f {STATS} time {TIME} {DETECTOR} split-video', output_dir=tmp_path) == 0
     entries = sorted(tmp_path.glob(f"{DEFAULT_VIDEO_NAME}-Scene-*"))
     assert (len(entries) == DEFAULT_NUM_SCENES), entries
     [entry.unlink() for entry in entries]
 
     assert invoke_scenedetect(
-        '-i {VIDEO} -s {STATS} time {TIME} {DETECTOR} split-video -c', output_dir=tmp_path) == 0
+        '-i {VIDEO} write-stats -f {STATS} time {TIME} {DETECTOR} split-video -c', output_dir=tmp_path) == 0
     entries = sorted(tmp_path.glob(f"{DEFAULT_VIDEO_NAME}-Scene-*"))
     assert (len(entries) == DEFAULT_NUM_SCENES)
     [entry.unlink() for entry in entries]
 
     assert invoke_scenedetect(
-        '-i {VIDEO} -s {STATS} time {TIME} {DETECTOR} split-video -f abc$VIDEO_NAME-123$SCENE_NUMBER',
+        '-i {VIDEO} write-stats -f {STATS} time {TIME} {DETECTOR} split-video -f abc$VIDEO_NAME-123$SCENE_NUMBER',
         output_dir=tmp_path) == 0
     entries = sorted(tmp_path.glob(f"abc{DEFAULT_VIDEO_NAME}-123*"))
     assert (len(entries) == DEFAULT_NUM_SCENES), entries
@@ -310,7 +310,7 @@ def test_cli_split_video_ffmpeg(tmp_path: Path):
 
     # -a/--args and -c/--copy are mutually exclusive, so this command should fail (return nonzero)
     assert invoke_scenedetect(
-        "-i {VIDEO} -s {STATS} time {TIME} {DETECTOR} split-video -c -a \"-c:v libx264\"",
+        "-i {VIDEO} write-stats -f {STATS} time {TIME} {DETECTOR} split-video -c -a \"-c:v libx264\"",
         output_dir=tmp_path)
 
 
@@ -318,15 +318,15 @@ def test_cli_split_video_ffmpeg(tmp_path: Path):
 def test_cli_split_video_mkvmerge(tmp_path: Path):
     """Test `split-video` command using mkvmerge."""
     assert invoke_scenedetect(
-        '-i {VIDEO} -s {STATS} time {TIME} {DETECTOR} split-video -m', output_dir=tmp_path) == 0
+        '-i {VIDEO} write-stats -f {STATS} time {TIME} {DETECTOR} split-video -m', output_dir=tmp_path) == 0
     assert invoke_scenedetect(
-        '-i {VIDEO} -s {STATS} time {TIME} {DETECTOR} split-video -m -c', output_dir=tmp_path) == 0
+        '-i {VIDEO} write-stats -f {STATS} time {TIME} {DETECTOR} split-video -m -c', output_dir=tmp_path) == 0
     assert invoke_scenedetect(
-        '-i {VIDEO} -s {STATS} time {TIME} {DETECTOR} split-video -m -f "test$VIDEO_NAME"',
+        '-i {VIDEO} write-stats -f {STATS} time {TIME} {DETECTOR} split-video -m -f "test$VIDEO_NAME"',
         output_dir=tmp_path) == 0
     # -a/--args and -m/--mkvmerge are mutually exclusive
     assert invoke_scenedetect(
-        '-i {VIDEO} -s {STATS} time {TIME} {DETECTOR} split-video -m -a "-c:v libx264"',
+        '-i {VIDEO} write-stats -f {STATS} time {TIME} {DETECTOR} split-video -m -a "-c:v libx264"',
         output_dir=tmp_path)
     # TODO: Check for existence of split video files.
 
@@ -334,7 +334,7 @@ def test_cli_split_video_mkvmerge(tmp_path: Path):
 def test_cli_save_images(tmp_path: Path):
     """Test `save-images` command."""
     assert invoke_scenedetect(
-        '-i {VIDEO} -s {STATS} time {TIME} {DETECTOR} save-images', output_dir=tmp_path) == 0
+        '-i {VIDEO} write-stats -f {STATS} time {TIME} {DETECTOR} save-images', output_dir=tmp_path) == 0
     # Open one of the created images and make sure it has the correct resolution.
     # TODO: Also need to test that the right number of images was generated, and compare with
     # expected frames from the actual video.
@@ -360,7 +360,7 @@ def test_cli_save_images_rotation(rotated_video_file, tmp_path):
 
 def test_cli_export_html(tmp_path: Path):
     """Test `export-html` command."""
-    base_command = '-i {VIDEO} -s {STATS} time {TIME} {DETECTOR} {COMMAND}'
+    base_command = '-i {VIDEO} write-stats -f {STATS} time {TIME} {DETECTOR} {COMMAND}'
     assert invoke_scenedetect(
         base_command, COMMAND='save-images export-html', output_dir=tmp_path) == 0
     assert invoke_scenedetect(
@@ -447,8 +447,8 @@ Scene Number,Start Frame
         f.write(scenes_csv)
     ground_truth = subprocess.check_output(
         SCENEDETECT_CMD.split(' ') + [
-            '-i', DEFAULT_VIDEO_PATH, 'detect-content', 'list-scenes', '-f', 'testout.csv', 'time',
-            '-s', '200', '-e', '400'
+            '-i', DEFAULT_VIDEO_PATH, 'detect-content', 'list-scenes', '-f', 'testout.csv',
+            'time', '-s', '200', '-e', '400'
         ],
         text=True)
     loaded_first_pass = subprocess.check_output(

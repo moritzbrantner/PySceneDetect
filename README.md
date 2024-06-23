@@ -1,6 +1,7 @@
 
 ![PySceneDetect](https://raw.githubusercontent.com/Breakthrough/PySceneDetect/main/website/pages/img/pyscenedetect_logo_small.png)
 ==========================================================
+
 Video Cut Detection and Analysis Tool
 ----------------------------------------------------------
 
@@ -19,7 +20,7 @@ Video Cut Detection and Analysis Tool
 
 **Documentation**:  [scenedetect.com/docs/](https://www.scenedetect.com/docs/)
 
-**Discord**: https://discord.gg/H83HbJngk7
+**Discord**: <https://discord.gg/H83HbJngk7>
 
 ----------------------------------------------------------
 
@@ -52,8 +53,8 @@ More examples can be found throughout [the documentation](https://www.scenedetec
 To get started, there is a high level function in the library that performs content-aware scene detection on a video (try it from a Python prompt):
 
 ```python
-from scenedetect import detect, ContentDetector
-scene_list = detect('my_video.mp4', ContentDetector())
+    from scenedetect import detect, ContentDetector
+    scene_list = detect('my_video.mp4', ContentDetector())
 ```
 
 `scene_list` will now be a list containing the start/end times of all scenes found in the video.  There also exists a two-pass version `AdaptiveDetector` which handles fast camera movement better, and `ThresholdDetector` for handling fade out/fade in events.
@@ -100,9 +101,9 @@ See [the documentation](https://www.scenedetect.com/docs/latest/api.html) for mo
 
 ## Reference
 
- - [Documentation](https://www.scenedetect.com/docs/) (covers application and Python API)
- - [CLI Example](https://www.scenedetect.com/cli/)
- - [Config File](https://www.scenedetect.com/docs/0.6.4/cli/config_file.html)
+- [Documentation](https://www.scenedetect.com/docs/) (covers application and Python API)
+- [CLI Example](https://www.scenedetect.com/cli/)
+- [Config File](https://www.scenedetect.com/docs/0.6.4/cli/config_file.html)
 
 ## Help & Contributing
 

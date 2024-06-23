@@ -297,6 +297,9 @@ CONFIG_MAP: ConfigDict = {
         "image-width": 0,
         "no-images": False,
     },
+    "write-stats": {
+        "filename": "$VIDEO_NAME-Stats.csv"
+    },
     "list-scenes": {
         "cut-format": "timecode",
         "display-cuts": True,
@@ -357,7 +360,7 @@ CHOICE_MAP: Dict[str, Dict[str, List[str]]] = {
     },
     'global': {
         'backend': ['opencv', 'pyav', 'moviepy'],
-        'default-detector': ['detect-adaptive', 'detect-content', 'detect-threshold'],
+        'default-detector': ['detect-adaptive', 'detect-content', 'detect-threshold', 'detect-hash', 'detect-hist'],
         'downscale-method': [value.name.lower() for value in Interpolation],
         'verbosity': ['debug', 'info', 'warning', 'error', 'none'],
     },
@@ -519,11 +522,21 @@ class ConfigRegistry:
                 raise ConfigLoadFailure(self._init_log)
         else:
             # Gracefully handle the case where there isn't a user config file.
-            if not os.path.exists(CONFIG_FILE_PATH):
-                self._init_log.append((logging.DEBUG, "User config file not found."))
+            current_path = os.path.join(os.getcwd(), "scenedetect.cfg")
+            if os.path.exists(current_path):
+                path = current_path
+                self._init_log.append((logging.INFO, "Loading config from file:\n  %s" % path))
                 return
-            path = CONFIG_FILE_PATH
-            self._init_log.append((logging.INFO, "Loading user config file:\n  %s" % path))
+            current_path = os.path.join(os.getcwd(), "scenedetect.conf")
+            if os.path.exists(current_path):
+                path = current_path
+                self._init_log.append((logging.INFO, "Loading config from file:\n  %s" % path))
+                return
+            if os.path.exists(CONFIG_FILE_PATH):
+                path = CONFIG_FILE_PATH
+                self._init_log.append((logging.INFO, "Loading user config file:\n  %s" % path))
+                return
+            self._init_log.append((logging.DEBUG, "User config file not found."))
         # Try to load and parse the config file at `path`.
         config = ConfigParser()
         try:

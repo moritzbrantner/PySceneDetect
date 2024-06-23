@@ -164,14 +164,7 @@ def _print_command_help(ctx: click.Context, command: click.Command):
     '-c',
     metavar='FILE',
     type=click.Path(exists=True, file_okay=True, readable=True, resolve_path=False),
-    help='Path to config file. If unset, tries to load config from %s' % (CONFIG_FILE_PATH),
-)
-@click.option(
-    '--stats',
-    '-s',
-    metavar='CSV',
-    type=click.Path(exists=False, file_okay=True, writable=True, resolve_path=False),
-    help='Stats file (.csv) to write frame metrics. Existing files will be overwritten. Used for tuning detection parameters and data analysis.',
+    help='Path to config file. If unset, tries to load config from current directory or %s' % (CONFIG_FILE_PATH),
 )
 @click.option(
     '--framerate',
@@ -261,7 +254,7 @@ def scenedetect(
     ctx: click.Context,
     input: Optional[AnyStr],
     output: Optional[AnyStr],
-    stats: Optional[AnyStr],
+    # stats: Optional[AnyStr],
     config: Optional[AnyStr],
     framerate: Optional[float],
     min_scene_len: Optional[str],
@@ -305,7 +298,7 @@ Global options (e.g. -i/--input, -c/--config) must be specified before any comma
         input_path=input,
         output=output,
         framerate=framerate,
-        stats_file=stats,
+        # stats_file=stats,
         downscale=downscale,
         frame_skip=frame_skip,
         min_scene_len=min_scene_len,
@@ -315,7 +308,7 @@ Global options (e.g. -i/--input, -c/--config) must be specified before any comma
         quiet=quiet,
         logfile=logfile,
         config=config,
-        stats=stats,
+        # stats=stats,
         verbosity=verbosity,
     )
 
@@ -907,6 +900,28 @@ def export_html_command(
         image_width=image_width,
         image_height=image_height,
     )
+    
+
+@click.command('write-stats', cls=_Command)
+@click.option(
+    '--filename',
+    '-f',
+    metavar='NAME',
+    default='$VIDEO_NAME-Stats.csv',
+    type=click.STRING,
+    help='Filename format to use for the scene list CSV file. You can use the $VIDEO_NAME macro in the file name. Note that you may have to wrap the format name using single quotes.%s'
+    % (USER_CONFIG.get_help_string('write-stats', 'filename')),
+)
+@click.pass_context
+def write_stats_command(
+    ctx: click.Context,
+    filename: Optional[AnyStr]
+):
+    """Export stats to CSV file."""
+    assert isinstance(ctx.obj, CliContext)
+    ctx.obj.handle_write_stats(
+        filename=filename
+    )
 
 
 @click.command('list-scenes', cls=_Command)
@@ -1249,6 +1264,7 @@ scenedetect.add_command(version_command)
 
 # Input / Output
 scenedetect.add_command(export_html_command)
+scenedetect.add_command(write_stats_command)
 scenedetect.add_command(list_scenes_command)
 scenedetect.add_command(load_scenes_command)
 scenedetect.add_command(save_images_command)

@@ -28,7 +28,7 @@ from scenedetect.platform import get_and_create_path, get_cv2_imwrite_params, in
 from scenedetect.frame_timecode import FrameTimecode, MAX_FPS_DELTA
 from scenedetect.video_stream import VideoStream, VideoOpenFailure, FrameRateUnavailable
 from scenedetect.video_splitter import is_mkvmerge_available, is_ffmpeg_available
-from scenedetect.detectors import AdaptiveDetector, ContentDetector, ThresholdDetector, HistogramDetector
+from scenedetect.detectors import AdaptiveDetector, ContentDetector, ThresholdDetector, HashDetector, HistogramDetector
 from scenedetect.stats_manager import StatsManager
 from scenedetect.scene_manager import SceneManager, Interpolation
 
@@ -115,7 +115,6 @@ class CliContext:
         # Global `scenedetect` Options
         self.output_dir: str = None                         # -o/--output
         self.quiet_mode: bool = None                        # -q/--quiet or -v/--verbosity quiet
-        self.stats_file_path: str = None                    # -s/--stats
         self.drop_short_scenes: bool = None                 # --drop-short-scenes
         self.merge_last_scene: bool = None                  # --merge-last-scene
         self.min_scene_len: FrameTimecode = None            # -m/--min-scene-len
@@ -168,6 +167,10 @@ class CliContext:
         self.html_include_images: bool = None # export-html --no-images
         self.image_width: int = None          # export-html -w/--image-width
         self.image_height: int = None         # export-html -h/--image-height
+        
+        # `write-stats` Command Options
+        self.write_stats: bool = False
+        self.stats_file_path: str = None     # write-stats -f/--filename
 
         # `load-scenes` Command Options
         self.load_scenes_input: str = None       # load-scenes -i/--input
@@ -182,7 +185,7 @@ class CliContext:
         input_path: AnyStr,
         output: Optional[AnyStr],
         framerate: float,
-        stats_file: Optional[AnyStr],
+        # stats_file: Optional[AnyStr],
         downscale: Optional[int],
         frame_skip: int,
         min_scene_len: str,
@@ -192,7 +195,7 @@ class CliContext:
         quiet: bool,
         logfile: Optional[AnyStr],
         config: Optional[AnyStr],
-        stats: Optional[AnyStr],
+        # stats: Optional[AnyStr],
         verbosity: Optional[str],
     ):
         """Parse all global options/arguments passed to the main scenedetect command,
@@ -203,9 +206,6 @@ class CliContext:
             click.BadParameter: One of the given options/parameters is invalid.
             click.Abort: Fatal initialization failure.
         """
-
-        # TODO(v1.0): Make the stats value optional (e.g. allow -s only), and allow use of
-        # $VIDEO_NAME macro in the name.  Default to $VIDEO_NAME.csv.
 
         try:
             init_failure = not self.config.initialized
@@ -242,15 +242,15 @@ class CliContext:
             logger.debug("Current configuration:\n%s", str(self.config.config_dict))
 
         logger.debug('Parsing program options.')
-        if stats is not None and frame_skip:
-            error_strs = [
-                'Unable to detect scenes with stats file if frame skip is not 0.',
-                '  Either remove the -fs/--frame-skip option, or the -s/--stats file.\n'
-            ]
-            logger.error('\n'.join(error_strs))
-            raise click.BadParameter(
-                'Combining the -s/--stats and -fs/--frame-skip options is not supported.',
-                param_hint='frame skip + stats file')
+        # if stats is not None and frame_skip:
+        #     error_strs = [
+        #         'Unable to detect scenes with stats file if frame skip is not 0.',
+        #         '  Either remove the -fs/--frame-skip option, or the -s/--stats file.\n'
+        #     ]
+        #     logger.error('\n'.join(error_strs))
+        #     raise click.BadParameter(
+        #         'Combining the -s/--stats and -fs/--frame-skip options is not supported.',
+        #         param_hint='frame skip + stats file')
 
         # Handle the case where -i/--input was not specified (e.g. for the `help` command).
         if input_path is None:
@@ -276,9 +276,9 @@ class CliContext:
         self.frame_skip = self.config.get_value("global", "frame-skip", frame_skip)
 
         # Create StatsManager if --stats is specified.
-        if stats_file:
-            self.stats_file_path = stats_file
-            self.stats_manager = StatsManager()
+        # if stats_file:
+        #     self.stats_file_path = stats_file
+        #     self.stats_manager = StatsManager()
 
         # Initialize default detector with values in the config file.
         default_detector = self.config.get_value("global", "default-detector")
@@ -529,6 +529,38 @@ class CliContext:
         logger.info('HTML file name format:\n %s', filename)
 
         self.export_html = True
+
+    def handle_write_stats(
+        self,
+        filename: Optional[AnyStr],
+    ):
+        """Handle `write-stats` command options."""
+        self._ensure_input_open()
+        if self.write_stats:
+            self._on_duplicate_command('write_stats')
+            
+            error_strs = [
+                'Unable to detect scenes with stats file if frame skip is not 0.',
+                '  Either remove the -fs/--frame-skip option, or the -s/--stats file.\n'
+            ]
+            logger.error('\n'.join(error_strs))
+            raise click.BadParameter(
+                'Combining the -s/--stats and -fs/--frame-skip options is not supported.',
+                param_hint='frame skip + stats file')
+        
+        # Create StatsManager if --stats is specified.
+        if filename:
+            self.stats_file_path = filename
+            self.stats_manager = StatsManager()
+            if(self.scene_manager is not None):
+                self.scene_manager.stats_manager = self.stats_manager
+
+        self.stats_file_path = self.config.get_value('write-stats', 'filename', filename)
+
+        logger.info('CSV file name format:\n %s', filename)
+
+        self.write_stats = True
+
 
     def handle_list_scenes(
         self,

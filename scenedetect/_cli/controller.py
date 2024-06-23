@@ -58,7 +58,7 @@ def run_scenedetect(context: CliContext):
         scene_list, cut_list = _detect(context)
         scene_list = _postprocess_scene_list(context, scene_list)
         # Handle -s/--stats option.
-        _save_stats(context)
+        _write_stats(context)
         if scene_list:
             logger.info(
                 'Detected %d scenes, average shot length %.1f seconds.', len(scene_list),
@@ -75,6 +75,9 @@ def run_scenedetect(context: CliContext):
 
     # Handle export-html command.
     _export_html(context, scene_list, cut_list, image_filenames)
+    
+    # Handle export-html command.
+    _write_stats(context)
 
     # Handle split-video command.
     _split_video(context, scene_list)
@@ -131,9 +134,9 @@ def _detect(context: CliContext):
     return scene_list, cut_list
 
 
-def _save_stats(context: CliContext) -> None:
+def _write_stats(context: CliContext) -> None:
     """Handles saving the statsfile if -s/--stats was specified."""
-    if not context.stats_file_path:
+    if not context.write_stats:
         return
     if context.stats_manager.is_save_required():
         path = get_and_create_path(context.stats_file_path, context.output_dir)

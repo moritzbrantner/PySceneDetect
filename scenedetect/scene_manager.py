@@ -613,6 +613,11 @@ class SceneManager:
         """Getter for the StatsManager associated with this SceneManager, if any."""
         return self._stats_manager
 
+    @stats_manager.setter
+    def stats_manager(self, value: StatsManager):
+        """Setter for the StatsManager associated with this SceneManager."""
+        self._stats_manager = value
+
     @property
     def downscale(self) -> int:
         """Factor to downscale each frame by. Will always be >= 1, where 1
